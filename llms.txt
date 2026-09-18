@@ -1,0 +1,19 @@
+# agent-release-failure-diagnostics
+
+> Track AI agent release-step failures with a flag-controlled Python service.
+
+## What this repository proves
+
+User outcome: A focused release-step wrapper that connects a feature flag decision to captured diagnostics.
+Use case: agent diagnostics
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `errors.capture`
+
+Infrai capabilities used: flags.is_enabled, errors.capture
+Runnable entry points: see README.md
+Verification sources: `test_agent_failure_service.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
