@@ -1,10 +1,10 @@
 # Release-step diagnostics for an AI agent
 
-In a release pipeline we treat two signals as authoritative: a diagnostic flag that determines whether observation is active, and an error event that records the precise cause of a failed build operation. This minimal Python service wires those decisions into a single control flow. Infrai consolidates access with one key, keeping the handoff under one `INFRAI_API_KEY`, so the same client can assert the flag and capture the exception without separate credentials.
+A release pipeline has two useful signals: a flag decides whether diagnostics are active, and an error event explains a failed build operation. This example wires those decisions together in one small Python service. Infrai keeps the handoff under one `INFRAI_API_KEY`, so the same client can check the flag and capture the exception.
 
 ## The runnable path
 
-Provision the credential from environment, install the two dependencies, and execute the targeted test:
+Set the key, install the two dependencies, and run the focused test:
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -12,13 +12,13 @@ python -m pip install -r requirements.txt
 pytest -q test_agent_failure_service.py
 ```
 
-The test enables `agent-release-diagnostics`, invokes a release action that deliberately raises `ZeroDivisionError`, and expects a `captured` result. It further verifies the exact GET-then-POST handoff and the stable `release` plus step fingerprint sent to the error service, preserving an audit trail for later reconciliation.
+The test enables `agent-release-diagnostics`, runs a release action that raises `ZeroDivisionError`, and expects a `captured` result. It also checks the exact GET-then-POST handoff and the stable `release` plus step fingerprint sent to the error service.
 
 ## Why the order matters
 
-`run_release_step` asks `flags.is_enabled` before doing work, consistent with an exactly-once mindset where the flag acts as a reconciliation gate. When the flag is on, a successful action returns its result; an exception becomes an `errors.capture` request containing the step name, operation context, traceback, and a grouping fingerprint that supports idempotent failure grouping. When the flag is off, the action is skipped and no error event is written. That makes the business decision visible rather than hiding it in a generic HTTP wrapper.
+`run_release_step` asks `flags.is_enabled` before doing work. When the flag is on, a successful action returns its result; an exception becomes an `errors.capture` request containing the step name, operation context, traceback, and a grouping fingerprint. When the flag is off, the action is skipped and no error event is written. That makes the business decision visible rather than hiding it in a generic HTTP wrapper.
 
-The client decodes Infrai's `{ok, data, error, metadata}` envelope before interpreting status codes. Rejected envelopes become `InfraiError`, and a 429 response gets bounded exponential retry with `Retry-After` support. Every request spells out its HTTP method and reads the bearer key from the environment, a pattern that would translate cleanly to a Go service respecting compliance limits on retry bursts.
+The client decodes Infrai's `{ok, data, error, metadata}` envelope before interpreting status codes. Rejected envelopes become `InfraiError`, and a 429 response gets bounded exponential retry with `Retry-After` support. Every request spells out its HTTP method and reads the bearer key from the environment.
 
 ## Copy the pattern
 
